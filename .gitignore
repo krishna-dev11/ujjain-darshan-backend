@@ -1,0 +1,82 @@
+# =========================
+# Dependencies
+# =========================
+node_modules/
+
+# =========================
+# Environment Files (CRITICAL)
+# =========================
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# =========================
+# Logs
+# =========================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# =========================
+# Build Files
+# =========================
+dist/
+build/
+
+# =========================
+# Cache
+# =========================
+.cache/
+coverage/
+
+# =========================
+# Runtime Files
+# =========================
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# =========================
+# OS Files
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# Editor Files
+# =========================
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# =========================
+# Temporary Files
+# =========================
+tmp/
+temp/
+
+# =========================
+# Database (If local)
+# =========================
+*.sqlite
+*.db
+
+# =========================
+# Uploaded Files (if any)
+# =========================
+uploads/
+public/uploads/
+
+# =========================
+# Render / Hosting
+# =========================
+.render
