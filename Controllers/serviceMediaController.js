@@ -1,6 +1,6 @@
-const courses = require("../Models/courses");
-const section = require("../Models/section");
-const subsection = require("../Models/subsection");
+const Service = require("../Models/service");
+const ServiceSection = require("../Models/serviceSection");
+const ServiceMedia = require("../Models/serviceMedia");
 const {
   uploadImageToCloudinary,
   deleteVideoTOCloudinary,
@@ -8,7 +8,7 @@ const {
 } = require("../Utilities/uploadImageToCloudinary");
 
 // checked
-exports.createSubSection = async (req, res) => {
+exports.createServiceMedia = async (req, res) => {
   try {
     const { subSectionName, description, sectionId, timeDuration, CourseId } =
       req.body;
@@ -54,9 +54,9 @@ exports.createSubSection = async (req, res) => {
     }
 
     // Create Subsection
-    let createSubsection;
+    let createdServiceMedia;
     try {
-      createSubsection = await subsection.create({
+      createdServiceMedia = await ServiceMedia.create({
         title: subSectionName,
         timeDuration: uploadCloudinary.duration,
         description: description,
@@ -73,10 +73,10 @@ exports.createSubSection = async (req, res) => {
     // Update Section
     let updatedSection;
     try {
-      updatedSection = await section
+      updatedSection = await ServiceSection
         .findByIdAndUpdate(
           { _id: sectionId },
-          { $push: { subSections: createSubsection._id } },
+          { $push: { subSections: createdServiceMedia._id } },
           { new: true }
         )
         .populate("subSections")
@@ -99,7 +99,7 @@ exports.createSubSection = async (req, res) => {
     // Update Course
     let updatedCourse;
     try {
-      updatedCourse = await courses.findById({ _id: CourseId }).populate({
+      updatedCourse = await Service.findById({ _id: CourseId }).populate({
         path: "courseContent",
         populate: { path: "subSections" },
       });
@@ -134,7 +134,7 @@ exports.createSubSection = async (req, res) => {
 };
 
 
-exports.updateSubSection = async (req, res) => {
+exports.updateServiceMedia = async (req, res) => {
   try {
     const {
       SubSectionId,
@@ -170,10 +170,10 @@ exports.updateSubSection = async (req, res) => {
 
     try {
 
-      const UpdatesubSection = await subsection.findById({_id:SubSectionId});
-      // console.log(UpdatesubSection , "Nikk")
-      UpdatesubSection.title = subSectionName;
-      UpdatesubSection.description = description;
+      const updatedServiceMedia = await ServiceMedia.findById({_id:SubSectionId});
+      // console.log(updatedServiceMedia , "Nikk")
+      updatedServiceMedia.title = subSectionName;
+      updatedServiceMedia.description = description;
 
       const uploadDetails = await uploadImageToCloudinary(
         lectureVideo,
@@ -181,10 +181,10 @@ exports.updateSubSection = async (req, res) => {
       );
       // console.log(uploadDetails , "me pagal hu")
 
-      UpdatesubSection.videoUrl = uploadDetails.secure_url;
-      UpdatesubSection.timeDuration = `${uploadDetails.duration}`;
+      updatedServiceMedia.videoUrl = uploadDetails.secure_url;
+      updatedServiceMedia.timeDuration = `${uploadDetails.duration}`;
 
-      await UpdatesubSection.save();
+      await updatedServiceMedia.save();
 
 
 
@@ -198,7 +198,7 @@ exports.updateSubSection = async (req, res) => {
 
     let updatedCourse;
     try {
-      updatedCourse = await courses.findById({ _id: CourseId }).populate({
+      updatedCourse = await Service.findById({ _id: CourseId }).populate({
         path: "courseContent",
         populate: { path: "subSections" },
       });
@@ -235,15 +235,15 @@ exports.updateSubSection = async (req, res) => {
 // checked
 
 
-exports.deleteSubSection = async (req, res) => {
+exports.deleteServiceMedia = async (req, res) => {
   try {
     const { subSectionId, sectionId , courseId} = req.body;
 
-    const subSection = await subsection.findByIdAndDelete({
+    const deletedServiceMedia = await ServiceMedia.findByIdAndDelete({
       _id: subSectionId,
     });
 
-    await section.findByIdAndUpdate(
+    await ServiceSection.findByIdAndUpdate(
       { _id: sectionId },
       {
         $pull: {
@@ -252,7 +252,7 @@ exports.deleteSubSection = async (req, res) => {
       }
     );
 
-    if (!subSection) {
+    if (!deletedServiceMedia) {
       return res
         .status(404)
         .json({ success: false, message: "SubSection not found" });
@@ -260,7 +260,7 @@ exports.deleteSubSection = async (req, res) => {
 
     let updatedCourse;
     try {
-      updatedCourse = await courses.findById({ _id: courseId }).populate({
+      updatedCourse = await Service.findById({ _id: courseId }).populate({
         path: "courseContent",
         populate: { path: "subSections" },
       });

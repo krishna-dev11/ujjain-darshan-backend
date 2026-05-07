@@ -9,7 +9,7 @@ dns.setServers(["8.8.8.8", "8.8.4.4"]);
 const userRoutes = require("./Routes/User")
 const profileRoutes = require("./Routes/Profile")
 const paymentRoutes = require("./Routes/Payment")
-const courseRoutes = require("./Routes/Course")
+const serviceRoutes = require("./Routes/Service")
 const aiRoutes = require("./Routes/aiRoutes");
 const walkInRoutes = require("./Routes/WalkIn");
 const expenseRoutes = require("./Routes/expense");
@@ -34,8 +34,8 @@ app.use(cookieParser());
 app.use(
     cors({
         // origin:"https://shree-ji-darshan-ujjain.vercel.app",   
-        // origin:"http://localhost:5173",
-        origin: "https://www.ujjainmahakaldarshnabooking.in",
+        origin:"http://localhost:5173",
+        // origin: "https://www.ujjainmahakaldarshnabooking.in",
         credentials : true
     })
 )
@@ -53,7 +53,7 @@ cloudinaryConnect();
 
 app.use("/api/v1/auth" , userRoutes);
 app.use("/api/v1/profile" , profileRoutes);
-app.use("/api/v1/course" , courseRoutes);
+app.use("/api/v1/course" , serviceRoutes);
 app.use("/api/v1/payment" , paymentRoutes);
 app.use("/api/v1/ai", aiRoutes);
 

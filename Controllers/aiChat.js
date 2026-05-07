@@ -1,4 +1,4 @@
-const Course = require("../Models/courses");
+const Course = require("../Models/service");
 const Category = require("../Models/category");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
@@ -120,7 +120,7 @@ exports.aiChat = async (req, res) => {
 
 
 
-// const Course = require("../Models/courses");
+// const Course = require("../Models/service");
 // const Category = require("../Models/category");
 // const { GoogleGenerativeAI } = require("@google/generative-ai");
 

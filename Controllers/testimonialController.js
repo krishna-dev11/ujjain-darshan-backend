@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const Testimonial = require("../Models/testimonial");
 const User = require("../Models/user");
-const Courses = require("../Models/courses");
+const Courses = require("../Models/service");
 const { uploadImageToCloudinary } = require("../Utilities/uploadImageToCloudinary");
 // const { uploadImageToCloudinary } = require("../Utilities/imageUploader");
 // const mongoose = require("mongoose");

@@ -4,7 +4,7 @@ const {
   uploadImageToCloudinary,
 } = require("../Utilities/uploadImageToCloudinary");
 const profile = require("../Models/profile");
-const courses = require("../Models/courses");
+const Service = require("../Models/service");
 const expense = require("../Models/expenseSchema");
 const enrollment = require("../Models/enrollmentSchema")
 const demoRequest = require("../Models/demoRequestSchema")
@@ -378,7 +378,7 @@ exports.GetInstructorDasboardData = async (req, res) => {
 
 
 
-exports.getAllCoursesOfInstructorForInstructorDashBoard = async (req, res) => {
+exports.getAllProviderServicesForInstructorDashBoard = async (req, res) => {
   try {
     const InstructorId = req.user.id;
 

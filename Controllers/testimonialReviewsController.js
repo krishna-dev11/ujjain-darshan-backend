@@ -1,10 +1,10 @@
 const { default: mongoose } = require("mongoose");
-const courses = require("../Models/courses");
-const ratingAndReviews = require("../Models/ratingAndReviews");
+const Service = require("../Models/service");
+const ratingAndReviews = require("../Models/testimonialReview");
 
 
 
-exports.createRatingAndReviews = async (req, res) => {
+exports.createTestimonialReview = async (req, res) => {
   try {
     const userId = req.user.id;
     const { courseId, rating, reviews, forType = "Course" } = req.body;
@@ -26,7 +26,7 @@ exports.createRatingAndReviews = async (req, res) => {
     }
 
     // Check if course exists (batch = course)
-    const iscourseExist = await courses.findById(courseId);
+    const iscourseExist = await Service.findById(courseId);
     if (!iscourseExist) {
       return res.status(400).json({
         success: false,
@@ -35,7 +35,7 @@ exports.createRatingAndReviews = async (req, res) => {
     }
 
     // Check if user enrolled in this batch/course
-    const isUserAlreadyHit = await courses.findOne({
+    const isUserAlreadyHit = await Service.findOne({
       _id: courseId,
       studentEnrolled: userId,
     });
@@ -77,7 +77,7 @@ exports.createRatingAndReviews = async (req, res) => {
       });
     }
 
-    await courses.findByIdAndUpdate(
+    await Service.findByIdAndUpdate(
       courseId,
       {
         $push: {
@@ -106,7 +106,7 @@ exports.createRatingAndReviews = async (req, res) => {
 
 
 
-exports.getAverageRating = async (req, res) => {
+exports.getAverageTestimonialRating = async (req, res) => {
   try {
     const { courseId, forType = "Course" } = req.body;
 
@@ -158,7 +158,7 @@ exports.getAverageRating = async (req, res) => {
 
 
 
-exports.getAllRatingAndReviews = async (req, res) => {
+exports.getAllTestimonialReviews = async (req, res) => {
   try {
     const { forType = "Course" } = req.query; // optional filter
 

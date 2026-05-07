@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 const WalkIn = require("../Models/walkInSchema");
-const courses = require("../Models/courses"); // batch = course
+const Service = require("../Models/service"); // batch = course
 const user = require("../Models/user");
 const Enrollment = require("../Models/enrollmentSchema");
 const Installment = require("../Models/installmentSchema");
@@ -55,7 +55,7 @@ exports.addWalkInStudent = async (req, res) => {
     // If batch provided, ensure it exists
     let batchDetails = null;
     if (interestedBatch) {
-      batchDetails = await courses.findById(interestedBatch);
+      batchDetails = await Service.findById(interestedBatch);
       if (!batchDetails) {
         return res.status(404).json({
           success: false,
@@ -404,7 +404,7 @@ exports.convertWalkInToUser = async (req, res) => {
     }
 
     // ---------- FETCH BATCH ----------
-    const batch = await courses.findById(batchId).session(session);
+    const batch = await Service.findById(batchId).session(session);
     if (!batch) {
       await session.abortTransaction();
       return res.status(404).json({
@@ -503,7 +503,7 @@ exports.convertWalkInToUser = async (req, res) => {
     );
 
     // ---------- ADD STUDENT TO BATCH ----------
-    await courses.findByIdAndUpdate(
+    await Service.findByIdAndUpdate(
       batchId,
       {
         $push: {

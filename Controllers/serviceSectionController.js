@@ -1,9 +1,9 @@
-const courses = require("../Models/courses");
-const section = require("../Models/section");
+const Service = require("../Models/service");
+const ServiceSection = require("../Models/serviceSection");
 // const user = require("../Models/user");
 
 // checked
-exports.createSection = async(req , res)=>{
+exports.createServiceSection = async(req , res)=>{
     try{
 
         const{sectionName , courseId} = req.body;
@@ -15,11 +15,11 @@ exports.createSection = async(req , res)=>{
             })
         }
 
-        const newsection = await section.create({sectionName : sectionName})
-        // console.log(newsection)
-        const updateCourse = await courses.findByIdAndUpdate(
+        const newServiceSection = await ServiceSection.create({sectionName : sectionName})
+        // console.log(newServiceSection)
+        const updateCourse = await Service.findByIdAndUpdate(
             { _id: courseId },
-            { $push: { courseContent: newsection._id } },
+            { $push: { courseContent: newServiceSection._id } },
             { new: true }
         ).populate({
             path: "courseContent",
@@ -42,7 +42,7 @@ exports.createSection = async(req , res)=>{
 }
 
 // checked
-exports.updateSection = async(req , res)=>{
+exports.updateServiceSection = async(req , res)=>{
     try{
         // console.log(req.body , "flyjaattt")
         const {sectionName , sectionId , CourseId} = req.body;
@@ -55,7 +55,7 @@ exports.updateSection = async(req , res)=>{
         }
 
         // Update the section name
-        const updatedSection = await section.findByIdAndUpdate(
+        const updatedSection = await ServiceSection.findByIdAndUpdate(
             {_id : sectionId},
             { sectionName: sectionName },
             { new: true }
@@ -69,7 +69,7 @@ exports.updateSection = async(req , res)=>{
         }
 
         // Update the course if needed, but avoid pushing duplicate IDs
-        const updatedCourse = await courses.findOneAndUpdate(
+        const updatedCourse = await Service.findOneAndUpdate(
             { _id: CourseId, courseContent: sectionId }, // Check if sectionId already exists in courseContent
             { $set: { "courseContent.$": updatedSection._id } }, // Update only if it exists
             { new: true }
@@ -102,14 +102,14 @@ exports.updateSection = async(req , res)=>{
 
 
 // checked but some error
-exports.deleteSection = async (req, res) => {
+exports.deleteServiceSection = async (req, res) => {
     try {
         // Extracting sectionId and courseId from request body
         const { sectionId , courseId } = req.body;
         // console.log(sectionId, courseId , "fucky")
 
         // Deleting the section from the 'section' collection
-        const deletedSection = await section.findByIdAndDelete(sectionId);
+        const deletedSection = await ServiceSection.findByIdAndDelete(sectionId);
 
         // Checking if the section exists
         if (!deletedSection) {
@@ -120,7 +120,7 @@ exports.deleteSection = async (req, res) => {
         }
 
         // Removing the section reference from the 'courses' collection
-        const deletesectionEnteryFromCourse = await courses.findByIdAndUpdate(
+        const deletesectionEnteryFromCourse = await Service.findByIdAndUpdate(
             courseId,
             {
                 $pull: {

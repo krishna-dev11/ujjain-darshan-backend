@@ -1,15 +1,15 @@
 const user = require("../Models/user");
 const Category = require("../Models/category");
-const courses = require("../Models/courses");
+const Service = require("../Models/service");
 const {
   uploadImageToCloudinary,
 } = require("../Utilities/uploadImageToCloudinary");
 const { json } = require("express");
 // const { path } = require("framer-motion/client");
-const section = require("../Models/section");
-const subsection = require("../Models/subsection");
+const ServiceSection = require("../Models/serviceSection");
+const ServiceMedia = require("../Models/serviceMedia");
 const { default: mongoose } = require("mongoose");
-const courseprogress = require("../Models/ProgressCourse");
+const ServiceProgress = require("../Models/serviceProgress");
 // const { convertSecondsToDuration } = require("../Utilities/SecondsToDuration");
 
 
@@ -28,7 +28,7 @@ function convertSecondsToDuration(seconds) {
 
 
 // checked
-exports.createCourse = async (req, res) => {
+exports.createService = async (req, res) => {
 
 
   try {
@@ -107,7 +107,7 @@ exports.createCourse = async (req, res) => {
 
 
     // -------- CREATE COURSE (NOW ACTING AS BATCH) --------
-    const newCourse = await courses.create({
+    const newCourse = await Service.create({
       courseName,
       courseDescription,
       price,
@@ -167,7 +167,7 @@ exports.createCourse = async (req, res) => {
 
 
 
-exports.editCourse = async (req, res) => {
+exports.editService = async (req, res) => {
   try {
     let {
       courseId,
@@ -244,9 +244,9 @@ exports.editCourse = async (req, res) => {
     }
 
     // Find existing course (batch)
-    const editCourse = await courses.findById(courseId);
+    const editService = await Service.findById(courseId);
 
-    if (!editCourse) {
+    if (!editService) {
       return res.status(404).json({
         success: false,
         message: "Course (Batch) not found",
@@ -254,53 +254,53 @@ exports.editCourse = async (req, res) => {
     }
 
     // -------- UPDATE OLD FIELDS (UI SAFE) --------
-    editCourse.courseName = courseName;
-    editCourse.courseDescription = courseDescription;
-    editCourse.price = price;
+    editService.courseName = courseName;
+    editService.courseDescription = courseDescription;
+    editService.price = price;
 
-    editCourse.whatYouWillLearn =
+    editService.whatYouWillLearn =
       typeof whatYouWillLearn === "string"
         ? JSON.parse(whatYouWillLearn)
         : whatYouWillLearn;
 
-    editCourse.instructor = checkInstructor._id;
+    editService.instructor = checkInstructor._id;
 
-    editCourse.thumbnail = uploadthumbnail
+    editService.thumbnail = uploadthumbnail
       ? uploadthumbnail.secure_url
       : thumbnail;
 
-    editCourse.tag =
+    editService.tag =
       typeof tag === "string" ? JSON.parse(tag) : tag;
 
-    editCourse.category = categoryDetails._id;
-    editCourse.status = status;
+    editService.category = categoryDetails._id;
+    editService.status = status;
 
-    editCourse.instructions =
+    editService.instructions =
       typeof instructions === "string"
         ? JSON.parse(instructions)
         : instructions;
 
     // -------- NEW BATCH FIELDS (SAFE ADDITIONS) --------
     if (isOfflineBatch !== undefined) {
-      editCourse.isOfflineBatch =
+      editService.isOfflineBatch =
         isOfflineBatch === "true" || isOfflineBatch === true;
     }
 
-    if (batchStartDate) editCourse.batchStartDate = batchStartDate;
-    if (batchEndDate) editCourse.batchEndDate = batchEndDate;
-    if (batchTiming) editCourse.batchTiming = batchTiming;
-    if (maxSeats) editCourse.maxSeats = Number(maxSeats);
-    if (batchStatus) editCourse.batchStatus = batchStatus;
+    if (batchStartDate) editService.batchStartDate = batchStartDate;
+    if (batchEndDate) editService.batchEndDate = batchEndDate;
+    if (batchTiming) editService.batchTiming = batchTiming;
+    if (maxSeats) editService.maxSeats = Number(maxSeats);
+    if (batchStatus) editService.batchStatus = batchStatus;
 
     if (enrollmentOpen !== undefined) {
-      editCourse.enrollmentOpen =
+      editService.enrollmentOpen =
         enrollmentOpen === "true" || enrollmentOpen === true;
     }
 
-    await editCourse.save();
+    await editService.save();
 
     // Final populated response (same as your old controller)
-    const finaleditedCourse = await courses
+    const finaleditedCourse = await Service
       .findById(courseId)
       .populate({
         path: "courseContent",
@@ -325,7 +325,7 @@ exports.editCourse = async (req, res) => {
 
 
 // checked
-exports.showAllCourse = async (req, res) => {
+exports.showAllService = async (req, res) => {
   try {
     const { 
       isOfflineBatch, 
@@ -349,7 +349,7 @@ exports.showAllCourse = async (req, res) => {
       filter.category = category;
     }
 
-    const allcourses = await courses
+    const allcourses = await Service
       .find(
         filter,
         {
@@ -398,7 +398,7 @@ exports.showAllCourse = async (req, res) => {
 
 
 // error
-exports.getAllDetailsOfOneCourse = async (req, res) => {
+exports.getAllDetailsOfOneService = async (req, res) => {
   try {
     const { courseId } = req.body;
 
@@ -409,7 +409,7 @@ exports.getAllDetailsOfOneCourse = async (req, res) => {
       });
     }
 
-    const allDetails = await courses
+    const allDetails = await Service
       .findById(courseId)
       .populate({
         path: "instructor",
@@ -459,7 +459,7 @@ exports.getAllDetailsOfOneCourse = async (req, res) => {
 
 
 
-exports.publishCourse = async (req, res) => {
+exports.publishService = async (req, res) => {
   try {
     const { courseId, status, TeachLive } = req.body;
 
@@ -476,8 +476,8 @@ exports.publishCourse = async (req, res) => {
       TeachLive === undefined ? false : Boolean(TeachLive);
 
     // Find course (batch)
-    const editCourse = await courses.findById(courseId);
-    if (!editCourse) {
+    const editService = await Service.findById(courseId);
+    if (!editService) {
       return res.status(404).json({
         success: false,
         message: "Course (Batch) not found",
@@ -485,21 +485,21 @@ exports.publishCourse = async (req, res) => {
     }
 
     // ---- OLD BEHAVIOR (UI SAFE) ----
-    editCourse.status = finalStatus;
-    editCourse.TeachLive = finalTeachLive;
+    editService.status = finalStatus;
+    editService.TeachLive = finalTeachLive;
 
     // ---- NEW (BATCH ENHANCEMENT) ----
     // Auto-map course status → batchStatus
     if (finalStatus === "Published") {
-      editCourse.batchStatus = "Ongoing";
+      editService.batchStatus = "Ongoing";
     } else if (finalStatus === "Draft") {
-      editCourse.batchStatus = "Upcoming";
+      editService.batchStatus = "Upcoming";
     }
 
-    await editCourse.save();
+    await editService.save();
 
     // Same populated response as your old controller
-    const finaleditedCourse = await courses
+    const finaleditedCourse = await Service
       .findById(courseId)
       .populate({
         path: "courseContent",
@@ -524,7 +524,7 @@ exports.publishCourse = async (req, res) => {
 
 
 
-exports.getAllCoursesOfInstructor = async (req, res) => {
+exports.getAllProviderServices = async (req, res) => {
   try {
     const { InstructorId } = req.body;
 
@@ -587,7 +587,7 @@ exports.getAllCoursesOfInstructor = async (req, res) => {
       data: CoursesData,
     });
   } catch (error) {
-    console.error("Error in getAllCoursesOfInstructor:", error);
+    console.error("Error in getAllProviderServices:", error);
     return res.status(500).json({
       success: false,
       error: error.message,
@@ -599,7 +599,7 @@ exports.getAllCoursesOfInstructor = async (req, res) => {
 
 
 
-exports.deleteCourseOfInstructor = async (req, res) => {
+exports.deleteProviderService = async (req, res) => {
   try {
     const { InstructorId, CourseId } = req.body;
 
@@ -611,7 +611,7 @@ exports.deleteCourseOfInstructor = async (req, res) => {
     }
 
     // Check if course exists before deleting
-    const courseExists = await courses.findById(CourseId);
+    const courseExists = await Service.findById(CourseId);
     if (!courseExists) {
       return res.status(404).json({
         success: false,
@@ -651,7 +651,7 @@ exports.deleteCourseOfInstructor = async (req, res) => {
     }
 
     // Delete the course (batch)
-    await courses.findByIdAndDelete(CourseId);
+    await Service.findByIdAndDelete(CourseId);
 
     return res.status(200).json({
       success: true,
@@ -671,7 +671,7 @@ exports.deleteCourseOfInstructor = async (req, res) => {
 
 
 
-// exports.getEnrolledCoursesDataForCardViews = async (req, res) => {
+// exports.getBookedServicesDataForCardViews = async (req, res) => {
 //   try {
 //     const { StudentId } = req.body;
 
@@ -728,7 +728,7 @@ exports.deleteCourseOfInstructor = async (req, res) => {
 // };
 
 
-exports.getEnrolledCoursesDataForCardViews = async (req, res) => {
+exports.getBookedServicesDataForCardViews = async (req, res) => {
   try {
     const { StudentId } = req.body;
 
@@ -782,7 +782,7 @@ exports.getEnrolledCoursesDataForCardViews = async (req, res) => {
 
       userData.courses[i].totalDuration = convertSecondsToDuration(totalDurationInSeconds);
 
-      let CourseProgress = await courseprogress.findOne({
+      let CourseProgress = await ServiceProgress.findOne({
         courseId: userData.courses[i]._id,
         userId: Sid,
       });
@@ -809,7 +809,7 @@ exports.getEnrolledCoursesDataForCardViews = async (req, res) => {
   }
 };
 
-exports.getCartCoursesData = async (req, res) => {
+exports.getBookingCartServicesData = async (req, res) => {
   try {
     const { CoursesIds } = req.body;
 
@@ -826,7 +826,7 @@ exports.getCartCoursesData = async (req, res) => {
       let course;
       try{
          
-          course = await courses.findById(course_id);
+          course = await Service.findById(course_id);
           if(!course) {
               return res.status(200).json({success:false, message:"Could not find the course"});
           }
@@ -854,7 +854,7 @@ exports.getCartCoursesData = async (req, res) => {
   }
 };
 
-exports.AddCourseInCart = async (req, res) => {
+exports.addServiceToBookingCart = async (req, res) => {
   try {
     const { CourseId, UserID } = req.body;
 
@@ -923,7 +923,7 @@ exports.AddCourseInCart = async (req, res) => {
 };
 
 
-exports.RemoveCourseInCart = async (req, res) => {
+exports.removeServiceFromBookingCart = async (req, res) => {
   try {
     const { CourseId , UserID } = req.body;
 
@@ -980,7 +980,7 @@ exports.RemoveCourseInCart = async (req, res) => {
   }
 };
 
-exports.EmptyCart = async (req, res) => {
+exports.emptyBookingCart = async (req, res) => {
   try {
     const {  UserID } = req.body;
 
@@ -1040,13 +1040,13 @@ exports.EmptyCart = async (req, res) => {
 };
 
 
-exports.updateCourseProgress = async(req,res) => {
+exports.updateServiceProgress = async(req,res) => {
   const {courseId, subSectionId} = req.body;
   const userId = req.user.id;
 
   try{
       //check if the subsection is valid
-      const subSection = await subsection.findById(subSectionId);
+      const subSection = await subServiceSection.findById(subSectionId);
 
       if(!subSection) {
           return res.status(404).json({error:"Invalid SUbSection"});
@@ -1055,7 +1055,7 @@ exports.updateCourseProgress = async(req,res) => {
       // console.log("SubSection Validation Done");
 
       //check for old entry 
-      let CourseProgress = await courseprogress.findOne({
+      let CourseProgress = await ServiceProgress.findOne({
           courseId:courseId,
           userId:userId,
       });
@@ -1110,7 +1110,7 @@ exports.updateCourseProgress = async(req,res) => {
 
 
 // course progress nikala 
-exports.getWatchedDuration = async (req, res) => {
+exports.getServiceMediaWatchedDuration = async (req, res) => {
   try {
     const { userId, courseId } = req.body;
 
@@ -1121,7 +1121,7 @@ exports.getWatchedDuration = async (req, res) => {
       });
     }
 
-    const userProgress = await courseprogress.findOne({ userId, courseId });
+    const userProgress = await ServiceProgress.findOne({ userId, courseId });
 
     if (!userProgress || userProgress.completedVideos.length === 0) {
       return res.status(200).json({
@@ -1132,7 +1132,7 @@ exports.getWatchedDuration = async (req, res) => {
       });
     }
 
-    const completedSubSections = await subsection.find({
+    const completedSubSections = await subServiceSection.find({
       _id: { $in: userProgress.completedVideos },
     });
 
@@ -1168,7 +1168,7 @@ exports.getWatchedDuration = async (req, res) => {
 };
 
 
-exports.getTotalCourseDuration = async (req, res) => {
+exports.getTotalServiceDuration = async (req, res) => {
   try {
     const { courseId } = req.body; // Get courseId from request
 
@@ -1180,7 +1180,7 @@ exports.getTotalCourseDuration = async (req, res) => {
     }
 
     // Step 1: Find course details by courseId
-    const course = await courses.findById(courseId).populate({
+    const course = await Service.findById(courseId).populate({
       path: "courseContent", // Populate the sections in the course
       populate: {
         path: "subSections", // Populate the subsections in each section
@@ -1199,7 +1199,7 @@ exports.getTotalCourseDuration = async (req, res) => {
 
     // Step 2: Calculate total duration of all subsections in the course
     for (const section of course.courseContent) {
-      for (const sub of section.subSections) {
+      for (const sub of ServiceSection.subSections) {
         if (typeof sub.timeDuration === "string" && sub.timeDuration.includes(".")) {
           const [secStr, msStr = "0"] = sub.timeDuration.split(".");
           const sec = Number(secStr);
@@ -1231,7 +1231,7 @@ exports.getTotalCourseDuration = async (req, res) => {
 };
 
 
-exports.getCourseCompletionPercentage = async (req, res) => {
+exports.getServiceCompletionPercentage = async (req, res) => {
   try {
     const { userId, courseId } = req.body;
 
@@ -1243,11 +1243,11 @@ exports.getCourseCompletionPercentage = async (req, res) => {
     }
 
     // 1. Get User Progress
-    const userProgress = await courseprogress.findOne({ userId, courseId });
+    const userProgress = await ServiceProgress.findOne({ userId, courseId });
     const completedVideoIds = userProgress?.completedVideos || [];
 
     // 2. Get Course Details and All SubSections
-    const course = await courses.findById(courseId).populate({
+    const course = await Service.findById(courseId).populate({
       path: "courseContent",
       populate: {
         path: "subSections",
@@ -1266,7 +1266,7 @@ exports.getCourseCompletionPercentage = async (req, res) => {
     let watchedMs = 0;
 
     for (const section of course.courseContent) {
-      for (const sub of section.subSections) {
+      for (const sub of ServiceSection.subSections) {
         if (typeof sub.timeDuration === "string" && sub.timeDuration.includes(".")) {
           const [secStr, msStr = "0"] = sub.timeDuration.split(".");
           const sec = Number(secStr);

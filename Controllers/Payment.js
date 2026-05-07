@@ -1,16 +1,16 @@
 const mongoose = require("mongoose");
-const courses = require("../Models/courses");
+const Service = require("../Models/service");
 const { instance } = require("../config/RazorpayInstance");
 const user = require("../Models/user");
 const { mailSender } = require("../Utilities/mailSender");
 const {
   courseEnrollmentEmail,
-} = require("../mail/templates/courseEnrollmentEmal");
+} = require("../mail/templates/serviceBookingEmail");
 const {
   paymentSuccessEmail,
 } = require("../mail/templates/paymentSuccessEmail");
 const crypto = require("crypto");
-const CourseProgress = require('../Models/ProgressCourse');
+const CourseProgress = require('../Models/serviceProgress');
 // require("dotenv").config()
 
 exports.capturePayment = async (req, res) => {
@@ -27,7 +27,7 @@ exports.capturePayment = async (req, res) => {
   // console.log(CoursesIds, "captured");
   for (const course_id of CoursesIds) {
     try {
-      const course = await courses.findById(course_id);
+      const course = await Service.findById(course_id);
 
       if (!course) {
         return res.status(404).json({
@@ -221,7 +221,7 @@ const enrollStudents = async (Courses, userId, res) => {
   for (const courseId of Courses) {
     try {
       //find the course and enroll the student in it
-      const enrolledCourse = await courses.findOneAndUpdate(
+      const enrolledCourse = await Service.findOneAndUpdate(
         { _id: courseId },
         { $push: { studentEnrolled: userId } },
         { new: true }
