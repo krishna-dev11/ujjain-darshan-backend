@@ -34,8 +34,8 @@ app.use(cookieParser());
 app.use(
     cors({
         // origin:"https://shree-ji-darshan-ujjain.vercel.app",   
-        origin:"http://localhost:5173",
-        // origin: "https://www.ujjainmahakaldarshnabooking.in",
+        // origin:"http://localhost:5173",
+        origin: "https://www.ujjainmahakaldarshnabooking.in",
         credentials : true
     })
 )
