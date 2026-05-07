@@ -119,11 +119,16 @@ exports.getAllUserDetails = async (req, res) => {
 // check
 exports.updateDisplayPicture = async (req, res) => {
   try {
-    const profilePicture = req.files.displayPicture;
-
+    const profilePicture = req.files?.displayPicture;
     const userId = req.user.id;
 
-    // console.log(profilePicture , userId , "alakh")
+    if (!profilePicture) {
+      return res.status(400).json({
+        success: false,
+        message: "Please select a profile image before uploading",
+      });
+    }
+
     const image = await uploadImageToCloudinary(
       profilePicture,
       process.env.CLOUDINARY_FOLDER,
@@ -161,6 +166,7 @@ exports.updateDisplayPicture = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "some error occurs in Uploding the new profile Picture",
+      error: error.message,
     });
   }
 };
@@ -203,8 +209,8 @@ exports.getAllEnrolledCourses = async (req, res) => {
     const userId = req.user.id;
 
     const userDetails = await user
-      .find({ _id: userId })
-      .populate("courses  ")
+      .findById(userId)
+      .populate("courses")
       .exec();
 
     if (!userDetails) {
@@ -234,11 +240,14 @@ exports.getAllEnrolledCourses = async (req, res) => {
 exports.GetInstructorDasboardData = async (req, res) => {
   try {
     const InstructorId = req.user.id;
+    const instructorServices = await Service.find({ instructor: InstructorId }).select("_id").lean();
+    const serviceIds = instructorServices.map((service) => service._id);
 
     // ===== BASIC COURSE DATA =====
-    const InsrtuctorAllCourses = await courses
+    const InsrtuctorAllCourses = await Service
       .find({ instructor: InstructorId })
-      .populate("studentEnrolled", "firstName lastName createdAt")
+      .populate("studentEnrolled.student", "firstName lastName createdAt")
+      .populate("studentEnrolled.enrollment", "totalFee amountPaidSoFar paymentMode status createdAt")
       .lean();
 
     const currentMonthStart = new Date();
@@ -249,15 +258,18 @@ exports.GetInstructorDasboardData = async (req, res) => {
 
     // ===== PER-COURSE METRICS (UI SAFE) =====
     const CourseData = InsrtuctorAllCourses.map((course) => {
-      const totalStudentsEnrolled = course.studentEnrolled.length;
-      const totalAmountEarned =
-        totalStudentsEnrolled * Number(course.price || 0);
+      const enrolledStudents = course.studentEnrolled || [];
+      const totalStudentsEnrolled = enrolledStudents.length;
+      const totalAmountEarned = enrolledStudents.reduce((acc, entry) => {
+        const paid = Number(entry?.enrollment?.amountPaidSoFar || entry?.enrollment?.totalFee || 0);
+        return acc + paid;
+      }, 0);
 
       // Students enrolled THIS MONTH
-      const studentsThisMonth = course.studentEnrolled.filter(
-        (s) =>
-          new Date(s.createdAt) >= currentMonthStart &&
-          new Date(s.createdAt) <= currentMonthEnd
+      const studentsThisMonth = enrolledStudents.filter(
+        (entry) =>
+          new Date(entry?.student?.createdAt || entry?.enrollment?.createdAt) >= currentMonthStart &&
+          new Date(entry?.student?.createdAt || entry?.enrollment?.createdAt) <= currentMonthEnd
       ).length;
 
       return {
@@ -292,17 +304,17 @@ exports.GetInstructorDasboardData = async (req, res) => {
     // ===== DEMO REQUESTS =====
     const pendingDemos = await demoRequest.countDocuments({
       status: "Pending",
-      instructor: InstructorId,
+      batch: { $in: serviceIds },
     });
 
     const completedDemos = await demoRequest.countDocuments({
-      status: "Completed",
-      instructor: InstructorId,
+      status: { $in: ["Accepted", "Rejected"] },
+      batch: { $in: serviceIds },
     });
 
     // ===== REVENUE THIS MONTH =====
     const enrollments = await enrollment.find({
-      instructor: InstructorId,
+      batch: { $in: serviceIds },
       createdAt: { $gte: currentMonthStart, $lte: currentMonthEnd },
     });
 
@@ -332,10 +344,11 @@ exports.GetInstructorDasboardData = async (req, res) => {
 
     const lastMonthEnd = new Date();
     lastMonthEnd.setMonth(lastMonthEnd.getMonth() - 1);
-    lastMonthEnd.setDate(31);
+    lastMonthEnd.setMonth(lastMonthEnd.getMonth() + 1, 0);
+    lastMonthEnd.setHours(23, 59, 59, 999);
 
     const lastMonthEnrollments = await enrollment.find({
-      instructor: InstructorId,
+      batch: { $in: serviceIds },
       createdAt: { $gte: lastMonthStart, $lte: lastMonthEnd },
     });
 
@@ -382,9 +395,10 @@ exports.getAllProviderServicesForInstructorDashBoard = async (req, res) => {
   try {
     const InstructorId = req.user.id;
 
-    const CoursesData = await courses
+    const CoursesData = await Service
       .find({ instructor: InstructorId })
-      .populate("studentEnrolled", "firstName lastName createdAt")
+      .populate("studentEnrolled.student", "firstName lastName createdAt")
+      .populate("studentEnrolled.enrollment", "totalFee amountPaidSoFar paymentMode status createdAt")
       .lean();
 
     if (!CoursesData) {
@@ -395,13 +409,16 @@ exports.getAllProviderServicesForInstructorDashBoard = async (req, res) => {
     }
 
     const enrichedCourses = CoursesData.map((course) => {
-      const totalStudents = course.studentEnrolled.length;
+      const enrolledStudents = course.studentEnrolled || [];
+      const totalStudents = enrolledStudents.length;
 
       const today = new Date();
-      const studentsLast7Days = course.studentEnrolled.filter(
-        (s) =>
-          new Date(s.createdAt) >=
-          new Date(today.setDate(today.getDate() - 7))
+      const sevenDaysAgo = new Date(today);
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      const studentsLast7Days = enrolledStudents.filter(
+        (entry) =>
+          new Date(entry?.student?.createdAt || entry?.enrollment?.createdAt) >=
+          sevenDaysAgo
       ).length;
 
       return {

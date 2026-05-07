@@ -11,6 +11,7 @@ const {
 } = require("../mail/templates/paymentSuccessEmail");
 const crypto = require("crypto");
 const CourseProgress = require('../Models/serviceProgress');
+const Enrollment = require("../Models/enrollmentSchema");
 // require("dotenv").config()
 
 exports.capturePayment = async (req, res) => {
@@ -19,7 +20,7 @@ exports.capturePayment = async (req, res) => {
 
   // console.log(CoursesIds, userId);
 
-  if (CoursesIds.length === 0) {
+  if (!Array.isArray(CoursesIds) || CoursesIds.length === 0) {
     return res.json({ success: false, message: "Please provide Course Id" });
   }
 
@@ -36,9 +37,11 @@ exports.capturePayment = async (req, res) => {
         });
       }
       // console.log("for iteratie on caputre lopp");
-      const uid = new mongoose.Types.ObjectId(userId);
+      const isAlreadyEnrolled = course.studentEnrolled?.some(
+        (entry) => entry?.student?.toString() === userId
+      );
 
-      if (course.studentEnrolled.includes(uid)) {
+      if (isAlreadyEnrolled) {
         return res.status(400).json({
           success: false,
           message: `Student is already enrolled in course ${course.courseName}`,
@@ -127,14 +130,6 @@ exports.verifyPayment = async (req, res) => {
 
   // console.log(Courses, "verify");
 
-  console.log(
-    razorpay_order_id,
-    razorpay_payment_id,
-    razorpay_signature,
-    Courses,
-    userId
-  );
-
   if (
     !razorpay_order_id ||
     !razorpay_payment_id ||
@@ -221,12 +216,41 @@ const enrollStudents = async (Courses, userId, res) => {
   for (const courseId of Courses) {
     try {
       //find the course and enroll the student in it
+      const course = await Service.findById(courseId);
+      if (!course) {
+        return res
+          .status(500)
+          .json({ success: false, message: "Course not Found" });
+      }
+
+      const isAlreadyEnrolled = course.studentEnrolled?.some(
+        (entry) => entry?.student?.toString() === userId
+      );
+      if (isAlreadyEnrolled) {
+        continue;
+      }
+
+      const enrollment = await Enrollment.create({
+        student: userId,
+        batch: courseId,
+        totalFee: Number(course.price || 0),
+        amountPaidSoFar: Number(course.price || 0),
+        paymentMode: "Full",
+        status: "Active",
+      });
+
       const enrolledCourse = await Service.findOneAndUpdate(
         { _id: courseId },
-        { $push: { studentEnrolled: userId } },
+        {
+          $push: {
+            studentEnrolled: {
+              student: userId,
+              enrollment: enrollment._id,
+            },
+          },
+        },
         { new: true }
       );
-      console.log("for checkin");
       if (!enrolledCourse) {
         return res
           .status(500)
@@ -246,17 +270,20 @@ const enrollStudents = async (Courses, userId, res) => {
       const enrolledStudent = await user.findByIdAndUpdate(
         userId,
         {
-          $push: {
+          $addToSet: {
             courses: courseId,
             coursesProgress: courseProgress._id,
           },
+          $inc: { totalPaid: Number(course.price || 0) },
+          paymentStatus: "Paid",
+          userRole: "Enrolled",
         },
         { new: true }
       );
 
       ///bachhe ko mail send kardo
       const emailResponse = await mailSender(
-        enrollStudents.email,
+        enrolledStudent.email,
         `Successfully Enrolled into ${enrolledCourse.courseName}`,
         courseEnrollmentEmail(
           enrolledCourse.courseName,

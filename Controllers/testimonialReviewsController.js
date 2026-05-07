@@ -37,7 +37,7 @@ exports.createTestimonialReview = async (req, res) => {
     // Check if user enrolled in this batch/course
     const isUserAlreadyHit = await Service.findOne({
       _id: courseId,
-      studentEnrolled: userId,
+      "studentEnrolled.student": userId,
     });
 
     if (!isUserAlreadyHit) {

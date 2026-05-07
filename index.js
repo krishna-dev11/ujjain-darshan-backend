@@ -32,13 +32,15 @@ dbconnect();
 app.use(express.json());
 app.use(cookieParser());
 app.use(
-    cors({
-        // origin:"https://shree-ji-darshan-ujjain.vercel.app",   
-        // origin:"http://localhost:5173",
-        origin: "https://www.ujjainmahakaldarshnabooking.in",
-        credentials : true
-    })
-)
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "https://shree-ji-darshan-ujjain.vercel.app",
+      "https://www.ujjainmahakaldarshnabooking.in"
+    ],
+    credentials: true
+  })
+);
 
         // push karte wakt uncomment karna
         // origin:"http://localhost:3000",

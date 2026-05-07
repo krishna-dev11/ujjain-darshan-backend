@@ -26,6 +26,28 @@ function convertSecondsToDuration(seconds) {
   return duration.join(" ")
 }
 
+function normalizeArrayField(value, fieldName) {
+  if (Array.isArray(value)) {
+    return value.filter((item) => String(item).trim() !== "");
+  }
+
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) {
+        return parsed.filter((item) => String(item).trim() !== "");
+      }
+    } catch (error) {
+      return value
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean);
+    }
+  }
+
+  throw new Error(`${fieldName} must be a list`);
+}
+
 
 // checked
 exports.createService = async (req, res) => {
@@ -52,8 +74,6 @@ exports.createService = async (req, res) => {
       enrollmentOpen,
     } = req.body;
 
-    console.log(req.body , 'tappu')
-
     const thumbnail = req.files?.thumbnailImage || req.body?.thumbnailImage;
 
     if (
@@ -75,6 +95,17 @@ exports.createService = async (req, res) => {
     // Default status (Course publish status)
     if (!status) {
       status = "Draft";
+    }
+
+    try {
+      whatYouWillLearn = normalizeArrayField(whatYouWillLearn, "whatYouWillLearn");
+      tag = normalizeArrayField(tag, "tag");
+      instructions = normalizeArrayField(instructions, "instructions");
+    } catch (error) {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
     }
 
     // Check if user is an instructor
@@ -113,9 +144,9 @@ exports.createService = async (req, res) => {
       price,
 
       // Keep your old parsing logic (UI dependent)   bhai yanha changes kiya hai mene json.parse(teno)
-      whatYouWillLearn: whatYouWillLearn ,
-      tag: tag,
-      instructions: instructions,
+      whatYouWillLearn,
+      tag,
+      instructions,
 
       instructor: checkInstructor._id,
       thumbnail: uploadThumbnail.secure_url,
@@ -213,6 +244,17 @@ exports.editService = async (req, res) => {
       status = "Draft";
     }
 
+    try {
+      whatYouWillLearn = normalizeArrayField(whatYouWillLearn, "whatYouWillLearn");
+      tag = normalizeArrayField(tag, "tag");
+      instructions = normalizeArrayField(instructions, "instructions");
+    } catch (error) {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
     // Check instructor
     const userId = req.user.id;
     const checkInstructor = await user.findById(userId);
@@ -258,10 +300,7 @@ exports.editService = async (req, res) => {
     editService.courseDescription = courseDescription;
     editService.price = price;
 
-    editService.whatYouWillLearn =
-      typeof whatYouWillLearn === "string"
-        ? JSON.parse(whatYouWillLearn)
-        : whatYouWillLearn;
+    editService.whatYouWillLearn = whatYouWillLearn;
 
     editService.instructor = checkInstructor._id;
 
@@ -269,16 +308,12 @@ exports.editService = async (req, res) => {
       ? uploadthumbnail.secure_url
       : thumbnail;
 
-    editService.tag =
-      typeof tag === "string" ? JSON.parse(tag) : tag;
+    editService.tag = tag;
 
     editService.category = categoryDetails._id;
     editService.status = status;
 
-    editService.instructions =
-      typeof instructions === "string"
-        ? JSON.parse(instructions)
-        : instructions;
+    editService.instructions = instructions;
 
     // -------- NEW BATCH FIELDS (SAFE ADDITIONS) --------
     if (isOfflineBatch !== undefined) {
@@ -428,10 +463,14 @@ exports.getAllDetailsOfOneService = async (req, res) => {
 
       // ----- NEW (for coaching/batch) -----
       .populate({
-        path: "studentEnrolled",
+        path: "studentEnrolled.student",
         populate: {
           path: "additionalDetails",
         },
+      })
+      .populate({
+        path: "studentEnrolled.enrollment",
+        select: "totalFee paymentMode status amountPaidSoFar createdAt",
       });
 
     if (!allDetails) {
@@ -473,7 +512,9 @@ exports.publishService = async (req, res) => {
     // Normalize values (safe way — no const mutation)
     const finalStatus = status || "Draft";
     const finalTeachLive =
-      TeachLive === undefined ? false : Boolean(TeachLive);
+      TeachLive === undefined
+        ? false
+        : TeachLive === true || TeachLive === "true";
 
     // Find course (batch)
     const editService = await Service.findById(courseId);
@@ -634,7 +675,8 @@ exports.deleteProviderService = async (req, res) => {
           populate: [
             { path: "courseContent", populate: { path: "subSections" } },
             { path: "ratingAndReviews" },
-            { path: "studentEnrolled" },
+            { path: "studentEnrolled.student" },
+            { path: "studentEnrolled.enrollment" },
           ],
         },
         {

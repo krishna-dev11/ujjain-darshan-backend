@@ -2,7 +2,9 @@ const Course = require("../Models/service");
 const Category = require("../Models/category");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const genAI = process.env.GEMINI_API_KEY
+  ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
+  : null;
 
 exports.aiChat = async (req, res) => {
   try {
@@ -27,11 +29,11 @@ exports.aiChat = async (req, res) => {
     if (category) {
       courses = await Course.find({ category: category._id })
         .populate("ratingAndReviews")
-        .populate("studentEnrolled");
+        .populate("studentEnrolled.student");
     } else {
       courses = await Course.find({})
         .populate("ratingAndReviews")
-        .populate("studentEnrolled");
+        .populate("studentEnrolled.student");
     }
 
     // Step 2: Prepare structured course data for AI
@@ -95,8 +97,19 @@ exports.aiChat = async (req, res) => {
     7. Use ONLY the provided database to answer.
     `;
 
-    // Step 4: Call Gemini AI (CORRECT MODEL)
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    if (!genAI) {
+      return res.status(200).json({
+        success: true,
+        aiAnswer:
+          "Jai Mahakal! AI service abhi configure nahi hai. Aap direct Dhruv Vasanwal se 9630385826 par contact kar sakte hain.",
+        coursesConsidered: courseDataForAI,
+      });
+    }
+
+    // Step 4: Call Gemini AI
+    const model = genAI.getGenerativeModel({
+      model: process.env.GEMINI_MODEL || "gemini-1.5-flash",
+    });
     const result = await model.generateContent(prompt);
     const aiResponse = result.response.text();
 
@@ -109,9 +122,12 @@ exports.aiChat = async (req, res) => {
   } catch (error) {
     console.error("AI Error:", error.message);
 
-    res.status(500).json({
-      success: false,
-      message: "AI processing failed",
+    res.status(200).json({
+      success: true,
+      aiAnswer:
+        "Jai Mahakal! AI assistant se abhi response nahi aa pa raha hai. Kripya Dhruv Vasanwal se 9630385826 par contact karein.",
+      coursesConsidered: [],
+      fallback: true,
       error: error.message,
     });
   }

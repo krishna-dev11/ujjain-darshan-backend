@@ -3,6 +3,9 @@ const cloudinary = require('cloudinary').v2;
 exports.uploadImageToCloudinary = async(file , folder , height , quality)=>
 {
     try{
+        if (!file || !file.tempFilePath) {
+            throw new Error("No valid file received for upload");
+        }
 
         const options = {folder};
 
@@ -19,7 +22,8 @@ exports.uploadImageToCloudinary = async(file , folder , height , quality)=>
       return await cloudinary.uploader.upload(file.tempFilePath , options);
 
     }catch(error){
-       console.error = error;
+       console.error("Cloudinary upload failed:", error.message);
+       throw error;
     }
 }
 
