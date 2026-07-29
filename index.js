@@ -15,6 +15,7 @@ const walkInRoutes = require("./Routes/WalkIn");
 const expenseRoutes = require("./Routes/expense");
 const TestimonailRoute = require("./Routes/testimonialRoutes")
 const enrollmentRoutes = require("./Routes/enrollment.routes");
+const contactActionRoutes = require("./Routes/contactActionRoutes");
 
 
 const {dbconnect} = require('./config/Database')
@@ -71,6 +72,7 @@ app.use("/api/v1/expense", expenseRoutes);
 app.use("/api/v1/testimonial", TestimonailRoute);
 
 app.use("/api/v1/enrollment", enrollmentRoutes);
+app.use("/api/v1/contact-actions", contactActionRoutes);
 
 
 
