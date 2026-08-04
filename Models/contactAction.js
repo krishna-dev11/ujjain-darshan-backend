@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+﻿const mongoose = require("mongoose");
 
 const contactActionSchema = new mongoose.Schema(
   {
@@ -6,7 +6,6 @@ const contactActionSchema = new mongoose.Schema(
       type: String,
       enum: ["whatsapp", "call"],
       required: true,
-      index: true,
     },
     count: {
       type: Number,
@@ -19,3 +18,4 @@ const contactActionSchema = new mongoose.Schema(
 contactActionSchema.index({ type: 1 }, { unique: true });
 
 module.exports = mongoose.model("ContactAction", contactActionSchema);
+
